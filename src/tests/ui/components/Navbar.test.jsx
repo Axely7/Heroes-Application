@@ -1,7 +1,14 @@
-import { render, screen } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { MemoryRouter, useNavigate } from "react-router-dom";
 import { AuthContext } from "../../../auth";
 import { Navbar } from "../../../ui";
+
+const mockedUseNavigate = jest.fn();
+
+jest.mock("react-router-dom", () => ({
+  ...jest.requireActual("react-router-dom"),
+  useNavigate: () => mockedUseNavigate,
+}));
 
 describe("Pruebas en <Navbar />", () => {
   const contextValue = {
@@ -17,7 +24,7 @@ describe("Pruebas en <Navbar />", () => {
 
   test("debe de mostrar el nombre del usuario", () => {
     render(
-      <MemoryRouter initialEntries={["/login"]}>
+      <MemoryRouter>
         <AuthContext.Provider value={contextValue}>
           <Navbar />
         </AuthContext.Provider>
@@ -25,24 +32,22 @@ describe("Pruebas en <Navbar />", () => {
     );
 
     // screen.debug();
-    expect(screen.getByText(contextValue.user.name)).toBeTruthy();
+    expect(screen.getByText("Axel Jimenez")).toBeTruthy();
   });
 
   test("debe de llamar el logout y navigate cuando se hace click en el botón", () => {
-    const contextValue = {
-      logged: true,
-      user: {
-        id: "ABC",
-        name: "Axel Jimenez",
-      },
-    };
-
     render(
-      <MemoryRouter initialEntries={["/login"]}>
+      <MemoryRouter>
         <AuthContext.Provider value={contextValue}>
           <Navbar />
         </AuthContext.Provider>
       </MemoryRouter>
     );
+
+    const logoutBtn = screen.getByRole("button");
+    fireEvent.click(logoutBtn);
+
+    expect(contextValue.logout).toHaveBeenCalled();
+    expect(mockedUseNavigate).toHaveBeenCalledWith("/login", { replace: true });
   });
 });
